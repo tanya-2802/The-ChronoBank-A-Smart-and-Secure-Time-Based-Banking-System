@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Fraud Alert Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-shield-alt"></i> Fraud Alert Details</h1>
+        <p class="lead">Review details of the potential fraudulent activity</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('fraud.fraud_alerts') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to Alerts
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Alert Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Alert ID:</strong> {{ alert.id }}</p>
+                <p><strong>Created:</strong> {{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Status:</strong> 
+                    {% if alert.status == 'OPEN' %}
+                    <span class="badge bg-warning">Open</span>
+                    {% elif alert.status == 'RESOLVED' %}
+                    <span class="badge bg-danger">Fraud Confirmed</span>
+                    {% elif alert.status == 'FALSE_POSITIVE' %}
+                    <span class="badge bg-success">False Positive</span>
+                    {% endif %}
+                </p>
+                <p><strong>Risk Score:</strong></p>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ alert.risk_score * 100 }}%;" aria-valuenow="{{ alert.risk_score * 100 }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ (alert.risk_score * 100) | round(1) }}%
+                    </div>
+                </div>
+                <p><strong>Description:</strong> {{ alert.description }}</p>
+                
+                {% if alert.resolved_at %}
+                <p><strong>Resolved:</strong> {{ alert.resolved_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% endif %}
+                
+                {% if alert.status == 'OPEN' %}
+                <div class="mt-4">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#resolveModal">
+                        <i class="fas fa-exclamation-circle"></i> Report as Fraud
+                    </button>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#falsePositiveModal">
+                        <i class="fas fa-check-circle"></i> Mark as False Positive
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-university"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Account Number:</strong> {{ alert.account.account_number }}</p>
+                <p><strong>Account Type:</strong> {{ alert.account.account_type.name }}</p>
+                <p><strong>Balance:</strong> {{ alert.account.format_balance() }}</p>
+                <p><strong>Status:</strong> 
+                    {% if alert.account.status == 'ACTIVE' %}
+                    <span class="badge bg-success">Active</span>
+                    {% elif alert.account.status == 'OVERDRAWN' %}
+                    <span class="badge bg-warning">Overdrawn</span>
+                    {% elif alert.account.status == 'FROZEN' %}
+                    <span class="badge bg-danger">Frozen</span>
+                    {% endif %}
+                </p>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('account.view_account', account_id=alert.account.id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Account
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        {% if transaction %}
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Transaction Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Reference:</strong> {{ transaction.reference_code }}</p>
+                <p><strong>Type:</strong> {{ transaction.transaction_type.name }}</p>
+                <p><strong>Amount:</strong> {{ transaction.format_amount() }}</p>
+                <p><strong>Description:</strong> {{ transaction.description }}</p>
+                <p><strong>Status:</strong> 
+                    {% if transaction.status == 'COMPLETED' %}
+                    <span class="badge bg-success">Completed</span>
+                    {% elif transaction.status == 'PENDING' %}
+                    <span class="badge bg-warning">Pending</span>
+                    {% elif transaction.status == 'FAILED' %}
+                    <span class="badge bg-danger">Failed</span>
+                    {% elif transaction.status == 'REVERSED' %}
+                    <span class="badge bg-secondary">Reversed</span>
+                    {% endif %}
+                </p>
+                <p><strong>Date:</strong> {{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('transaction.view_transaction', transaction_id=transaction.id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Transaction
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Resolve Modal -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resolveModalLabel">Confirm Fraud Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to report this as fraud? Your account will be frozen for security purposes.</p>
+                <p><strong>Account:</strong> {{ alert.account.account_number }}</p>
+                <p><strong>Description:</strong> {{ alert.description }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('fraud.resolve_alert', alert_id=alert.id) }}">
+                    <input type="hidden" name="is_fraud" value="true">
+                    <button type="submit" class="btn btn-danger">Confirm Fraud</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- False Positive Modal -->
+<div class="modal fade" id="falsePositiveModal" tabindex="-1" aria-labelledby="falsePositiveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="falsePositiveModalLabel">Confirm False Positive</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure this alert is a false positive? This will mark the alert as resolved.</p>
+                <p><strong>Account:</strong> {{ alert.account.account_number }}</p>
+                <p><strong>Description:</strong> {{ alert.description }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('fraud.resolve_alert', alert_id=alert.id) }}">
+                    <input type="hidden" name="is_fraud" value="false">
+                    <button type="submit" class="btn btn-success">Confirm False Positive</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="fas fa-plus-circle"></i> Create New Account</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('account.create_account') }}">
+                    <div class="mb-3">
+                        <label for="account_type" class="form-label">Account Type</label>
+                        <select class="form-select" id="account_type" name="account_type" required>
+                            <option value="" selected disabled>Select an account type</option>
+                            {% for account_type in account_types %}
+                            <option value="{{ account_type.name }}">{{ account_type.name }} - {{ account_type.description }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="mt-3" id="account-type-details">
+                            <!-- Account type details will be shown here -->
+                        </div>
+                        
+                        <script>
+                            document.getElementById('account_type').addEventListener('change', function() {
+                                const accountType = this.value;
+                                const detailsDiv = document.getElementById('account-type-details');
+                                
+                                if (accountType === 'SavingsAccount') {
+                                    detailsDiv.innerHTML = `
+                                        <div class="alert alert-success">
+                                            <h5><i class="fas fa-piggy-bank"></i> SavingsAccount Benefits:</h5>
+                                            <ul>
+                                                <li><strong>10% Bonus</strong> on all deposits!</li>
+                                                <li>High interest rate of 7%</li>
+                                                <li>Secure storage for your valuable time</li>
+                                            </ul>
+                                        </div>
+                                    `;
+                                } else if (accountType === 'BasicTimeAccount') {
+                                    detailsDiv.innerHTML = `
+                                        <div class="alert alert-info">
+                                            <h5><i class="fas fa-clock"></i> BasicTimeAccount Features:</h5>
+                                            <ul>
+                                                <li>5% Bonus on all deposits</li>
+                                                <li>No minimum balance requirement</li>
+                                                <li>Perfect for everyday transactions</li>
+                                            </ul>
+                                        </div>
+                                    `;
+                                } else if (accountType === 'InvestorAccount') {
+                                    detailsDiv.innerHTML = `
+                                        <div class="alert alert-primary">
+                                            <h5><i class="fas fa-chart-line"></i> InvestorAccount Features:</h5>
+                                            <ul>
+                                                <li>5% Bonus on all deposits</li>
+                                                <li>5% interest rate on investments</li>
+                                                <li>Higher transaction limits</li>
+                                            </ul>
+                                        </div>
+                                    `;
+                                } else if (accountType === 'LoanAccount') {
+                                    detailsDiv.innerHTML = `
+                                        <div class="alert alert-warning">
+                                            <h5><i class="fas fa-hand-holding-usd"></i> LoanAccount Features:</h5>
+                                            <ul>
+                                                <li>5% Bonus on all deposits</li>
+                                                <li>Flexible borrowing options</li>
+                                                <li>Competitive interest rates</li>
+                                            </ul>
+                                        </div>
+                                    `;
+                                } else {
+                                    detailsDiv.innerHTML = '';
+                                }
+                            });
+                        </script>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">Create Account</button>
+                        <a href="{{ url_for('account.accounts') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

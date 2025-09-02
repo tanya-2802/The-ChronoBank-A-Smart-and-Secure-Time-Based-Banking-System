@@ -1,0 +1,27 @@
+# Node / JS
+node_modules/
+npm-debug.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+.env
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

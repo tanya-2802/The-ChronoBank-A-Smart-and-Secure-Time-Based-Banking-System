@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-bell"></i> Notifications</h1>
+            <p class="lead">
+                {% if unread_only %}
+                Showing unread notifications
+                {% else %}
+                Showing all notifications
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('notification.notifications') }}" class="btn btn-outline-primary {% if not unread_only %}active{% endif %}">All</a>
+                <a href="{{ url_for('notification.unread_notifications') }}" class="btn btn-outline-primary {% if unread_only %}active{% endif %}">Unread</a>
+            </div>
+            <form method="POST" action="{{ url_for('notification.mark_all_as_read') }}" class="d-inline">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check-double"></i> Mark All as Read
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            {% if notifications %}
+            <div class="list-group">
+                {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action {% if not notification.is_read %}list-group-item-primary{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ notification.title }}</h5>
+                        <small>{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    {% if not notification.is_read %}
+                    <form method="POST" action="{{ url_for('notification.mark_as_read', notification_id=notification.id) }}" class="mt-2">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-check"></i> Mark as Read
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                {% if unread_only %}
+                You have no unread notifications.
+                {% else %}
+                You have no notifications.
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Mark notification as read via AJAX
+        $('.list-group-item form').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.post(url, function(data) {
+                if (data.success) {
+                    form.closest('.list-group-item').removeClass('list-group-item-primary');
+                    form.remove();
+                }
+            });
+        });
+        
+        // Mark all as read via AJAX
+        $('form[action="{{ url_for("notification.mark_all_as_read") }}"]').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.post(url, function(data) {
+                if (data.success) {
+                    $('.list-group-item').removeClass('list-group-item-primary');
+                    $('.list-group-item form').remove();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-university"></i> Account Details</h1>
+        <p class="lead">{{ account.account_number }}</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            {% if account.status == 'FROZEN' %}
+            <button class="btn btn-success" disabled title="Account is frozen">
+                <i class="fas fa-plus"></i> Deposit
+            </button>
+            <button class="btn btn-warning" disabled title="Account is frozen">
+                <i class="fas fa-minus"></i> Withdraw
+            </button>
+            <button class="btn btn-info" disabled title="Account is frozen">
+                <i class="fas fa-exchange-alt"></i> Transfer
+            </button>
+            {% else %}
+            <a href="{{ url_for('account.deposit', account_id=account.id) }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Deposit
+            </a>
+            <a href="{{ url_for('account.withdraw', account_id=account.id) }}" class="btn btn-warning">
+                <i class="fas fa-minus"></i> Withdraw
+            </a>
+            <a href="{{ url_for('account.transfer', account_id=account.id) }}" class="btn btn-info">
+                <i class="fas fa-exchange-alt"></i> Transfer
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Account Number:</strong> {{ account.account_number }}</p>
+                <p><strong>Account Type:</strong> {{ account.account_type.name }}</p>
+                <p><strong>Description:</strong> {{ account.account_type.description }}</p>
+                <p><strong>Balance:</strong> <span class="text-primary fw-bold">{{ account.format_balance() }}</span></p>
+                {% if account.status == 'FROZEN' %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Account Frozen:</strong> This account has been frozen due to suspicious activity. Please contact customer support to resolve this issue.
+                </div>
+                {% elif account.balance < 1800 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Low Balance Alert:</strong> Your account balance is below 30 minutes. Please deposit more time to avoid service interruptions.
+                </div>
+                {% endif %}
+                <p>
+                    <strong>Status:</strong>
+                    {% if account.status == 'ACTIVE' %}
+                    <span class="badge bg-success">Active</span>
+                    {% elif account.status == 'OVERDRAWN' %}
+                    <span class="badge bg-warning">Overdrawn</span>
+                    {% elif account.status == 'FROZEN' %}
+                    <span class="badge bg-danger">Frozen</span>
+                    {% endif %}
+                </p>
+                <p><strong>Created:</strong> {{ account.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Last Updated:</strong> {{ account.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog"></i> Account Settings</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Minimum Balance:</strong> {{ account.account_type.min_balance // 3600 }} hours</p>
+                <p><strong>Interest Rate:</strong> {{ account.account_type.interest_rate * 100 }}%</p>
+                <p><strong>Transaction Limit:</strong> {{ account.account_type.transaction_limit // 3600 }} hours</p>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ (account.balance / account.account_type.transaction_limit) * 100 }}%;" aria-valuenow="{{ account.balance }}" aria-valuemin="0" aria-valuemax="{{ account.account_type.transaction_limit }}">
+                        {{ (account.balance / account.account_type.transaction_limit) * 100 | round(1) }}%
+                    </div>
+                </div>
+                <small class="text-muted">Balance as percentage of transaction limit</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Transaction History</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions|sort(attribute='created_at', reverse=True) %}
+                            <tr>
+                                <td>{{ transaction.reference_code }}</td>
+                                <td>{{ transaction.transaction_type.name }}</td>
+                                <td>
+                                    {% if transaction.source_account_id == account.id %}
+                                    <span class="text-danger">-{{ transaction.format_amount() }}</span>
+                                    {% else %}
+                                    <span class="text-success">+{{ transaction.format_amount() }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.description }}</td>
+                                <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if transaction.status == 'COMPLETED' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif transaction.status == 'PENDING' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif transaction.status == 'FAILED' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {% elif transaction.status == 'REVERSED' %}
+                                    <span class="badge bg-secondary">Reversed</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('transaction.view_transaction', transaction_id=transaction.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if transaction.status == 'COMPLETED' and transaction.source_account_id == account.id and (transaction.created_at - now).total_seconds() < 3600 %}
+                                    <form method="POST" action="{{ url_for('transaction.undo_transaction', transaction_id=transaction.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to undo this transaction?')">
+                                            <i class="fas fa-undo"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">No transactions found for this account.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Transactions{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-search"></i> Search Transactions</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('transaction.search_transactions') }}">
+                    <div class="mb-3">
+                        <label for="reference_code" class="form-label">Transaction Reference Code</label>
+                        <input type="text" class="form-control" id="reference_code" name="reference_code" required>
+                        <div class="form-text">Enter the reference code of the transaction you want to find</div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                        <a href="{{ url_for('transaction.transactions') }}" class="btn btn-outline-secondary">Back to Transactions</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

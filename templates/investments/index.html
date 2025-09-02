@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Investments{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-chart-line"></i> Investments</h1>
+            <p class="lead">Manage your time investments</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('investment.investments') }}" class="btn btn-outline-primary active">All Investments</a>
+                <a href="{{ url_for('investment.active_investments') }}" class="btn btn-outline-primary">Active Investments</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            {% if investments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Amount</th>
+                            <th>Interest Rate</th>
+                            <th>Term</th>
+                            <th>Maturity Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for investment in investments %}
+                        <tr>
+                            <td>{{ investment.account.account_number }}</td>
+                            <td>{{ investment.format_amount() }}</td>
+                            <td>{{ "%.2f"|format(investment.interest_rate * 100) }}%</td>
+                            <td>{{ investment.term_days }} days</td>
+                            <td>{{ investment.maturity_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if investment.status == 'ACTIVE' %}
+                                <span class="badge bg-primary">Active</span>
+                                {% elif investment.status == 'MATURED' %}
+                                <span class="badge bg-success">Matured</span>
+                                {% elif investment.status == 'WITHDRAWN' %}
+                                <span class="badge bg-secondary">Withdrawn</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('investment.investment_details', investment_id=investment.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-info-circle"></i> Details
+                                </a>
+                                {% if investment.status == 'ACTIVE' or investment.status == 'MATURED' %}
+                                <form method="POST" action="{{ url_for('investment.withdraw_investment', investment_id=investment.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-money-bill-wave"></i> Withdraw
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> You don't have any investments.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            <h2>Create a New Investment</h2>
+            <p>Select an investor account to create an investment:</p>
+            
+            <div class="list-group">
+                {% for account in accounts %}
+                <a href="{{ url_for('investment.create_investment', account_id=account.id) }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ account.account_number }}</h5>
+                        <small>Balance: {{ account.format_balance() }}</small>
+                    </div>
+                    <p class="mb-1">{{ account.account_type.name }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

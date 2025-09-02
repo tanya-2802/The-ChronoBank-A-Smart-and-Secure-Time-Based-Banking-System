@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+        <p class="lead">Welcome back, {{ current_user.first_name }}!</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-wallet"></i> Total Time Balance</h5>
+                <p class="display-6 text-primary">
+                    {% set total_balance=0 %}
+                    {% set ns = namespace(total_balance=0) %}
+                    {% for account in accounts %}
+                        {% set ns.total_balance = ns.total_balance + account.balance %}                      
+                    {% endfor %}
+
+
+                    <h2><strong>{{ (ns.total_balance / 3600)|round(2) }} hours</strong></h2>
+                </p>
+                <p class="card-text text-muted">Across all your accounts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-university"></i> Active Accounts</h5>
+                <p class="display-6 text-success">{{ accounts|length }}</p>
+                <p class="card-text text-muted">
+                    <a href="{{ url_for('account.accounts') }}" class="text-decoration-none">View all accounts</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-user-circle"></i> Reputation Score</h5>
+                <p class="display-6 text-info">{{ current_user.reputation_score }}</p>
+                <p class="card-text text-muted">Your current reputation in the system</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Your Time Accounts</h5>
+            </div>
+            <div class="card-body">
+                {% if accounts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Account Number</th>
+                                <th>Type</th>
+                                <th>Balance</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                            <tr>
+                                <td>{{ account.account_number }}</td>
+                                <td>{{ account.account_type.name }}</td>
+                                <td>
+                                    {{ account.format_balance() }}
+                                    {% if account.balance < 10800 %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-danger">Low Balance (< 3 hours)</span>
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if account.status == 'ACTIVE' %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% elif account.status == 'OVERDRAWN' %}
+                                    <span class="badge bg-warning">Overdrawn</span>
+                                    {% elif account.status == 'FROZEN' %}
+                                    <span class="badge bg-danger">Frozen</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('account.view_account', account_id=account.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <p class="mb-0">You don't have any accounts yet. <a href="{{ url_for('account.create_account') }}">Create your first account</a>.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('account.create_account') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Create New Account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Transfer Time{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0"><i class="fas fa-exchange-alt"></i> Transfer Time</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p class="mb-0">
+                        <strong>Source Account:</strong> {{ account.account_number }}<br>
+                        <strong>Account Type:</strong> {{ account.account_type.name }}<br>
+                        <strong>Current Balance:</strong> {{ account.format_balance() }}
+                    </p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Time Tax Notice</h5>
+                    <p>A <strong>2% time tax</strong> will be deducted from the destination account upon transfer.</p>
+                </div>
+                <form method="POST" action="{{ url_for('account.transfer', account_id=account.id) }}">
+                    <div class="mb-3">
+                        <label for="destination_account" class="form-label">Destination Account Number</label>
+                        <input type="text" class="form-control" id="destination_account" name="destination_account" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (in hours)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" min="0.1" step="0.1" max="{{ account.balance / 3600 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" value="Transfer">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-info">Transfer Time</button>
+                        <a href="{{ url_for('account.view_account', account_id=account.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

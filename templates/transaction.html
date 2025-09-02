@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-exchange-alt"></i> Transaction Details</h1>
+        <p class="lead">{{ transaction.reference_code }}</p>
+    </div>
+    <div class="col-auto">
+        {% if transaction.status == 'COMPLETED' and transaction.source_account_id and transaction.source_account.user_id == current_user.id and (transaction.created_at - now).total_seconds() < 3600 %}
+        <form method="POST" action="{{ url_for('transaction.undo_transaction', transaction_id=transaction.id) }}">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to undo this transaction?')">
+                <i class="fas fa-undo"></i> Undo Transaction
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Transaction Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Reference Code:</strong> {{ transaction.reference_code }}</p>
+                <p><strong>Type:</strong> {{ transaction.transaction_type.name }}</p>
+                <p><strong>Amount:</strong> <span class="fw-bold">{{ transaction.format_amount() }}</span></p>
+                <p><strong>Description:</strong> {{ transaction.description }}</p>
+                
+                {% if "Tax:" in transaction.description %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Tax Applied:</strong> 
+                    This transaction had a 2% time tax deduction applied.
+                </div>
+                {% endif %}
+                
+                {% if "Bonus:" in transaction.description %}
+                <div class="alert alert-success">
+                    <i class="fas fa-gift"></i> <strong>Bonus Applied:</strong> 
+                    {% if "Savings Account" in transaction.description %}
+                    This deposit received a 10% time bonus reward!
+                    {% else %}
+                    This deposit received a 5% time bonus reward!
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <p>
+                    <strong>Status:</strong>
+                    {% if transaction.status == 'COMPLETED' %}
+                    <span class="badge bg-success">Completed</span>
+                    {% elif transaction.status == 'PENDING' %}
+                    <span class="badge bg-warning">Pending</span>
+                    {% elif transaction.status == 'FAILED' %}
+                    <span class="badge bg-danger">Failed</span>
+                    {% elif transaction.status == 'REVERSED' %}
+                    <span class="badge bg-secondary">Reversed</span>
+                    {% endif %}
+                </p>
+                <p><strong>Created:</strong> {{ transaction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p><strong>Last Updated:</strong> {{ transaction.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-university"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                {% if transaction.source_account_id %}
+                <div class="mb-3">
+                    <h6>Source Account</h6>
+                    <p><strong>Account Number:</strong> {{ transaction.source_account.account_number }}</p>
+                    <p><strong>Account Type:</strong> {{ transaction.source_account.account_type.name }}</p>
+                    <p><strong>Owner:</strong> {{ transaction.source_account.user.get_full_name() }}</p>
+                </div>
+                {% endif %}
+                
+                {% if transaction.destination_account_id %}
+                <div>
+                    <h6>Destination Account</h6>
+                    <p><strong>Account Number:</strong> {{ transaction.destination_account.account_number }}</p>
+                    <p><strong>Account Type:</strong> {{ transaction.destination_account.account_type.name }}</p>
+                    <p><strong>Owner:</strong> {{ transaction.destination_account.user.get_full_name() }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

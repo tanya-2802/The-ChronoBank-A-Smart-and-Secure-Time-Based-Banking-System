@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Active Loans{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-hand-holding-usd"></i> Active Loans</h1>
+            <p class="lead">Manage your active time loans</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('loan.loans') }}" class="btn btn-outline-primary">All Loans</a>
+                <a href="{{ url_for('loan.active_loans') }}" class="btn btn-outline-primary active">Active Loans</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Amount</th>
+                            <th>Interest Rate</th>
+                            <th>Remaining</th>
+                            <th>Due Date</th>
+                            <th>Days Left</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        {% set days_left = (loan.due_date - now).days %}
+                        <tr class="{% if days_left <= 7 %}table-warning{% endif %}{% if days_left <= 3 %}table-danger{% endif %}">
+                            <td>{{ loan.account.account_number }}</td>
+                            <td>{{ loan.format_amount() }}</td>
+                            <td>{{ "%.2f"|format(loan.interest_rate * 100) }}%</td>
+                            <td>{{ loan.format_remaining() }}</td>
+                            <td>{{ loan.due_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if days_left <= 0 %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% else %}
+                                {{ days_left }} day{% if days_left != 1 %}s{% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('loan.loan_details', loan_id=loan.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-info-circle"></i> Details
+                                </a>
+                                <a href="{{ url_for('loan.loan_details', loan_id=loan.id) }}#payment" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-money-bill-wave"></i> Pay
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> You don't have any active loans.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            <h2>Apply for a Loan</h2>
+            <p>Select an account to apply for a loan:</p>
+            
+            <div class="list-group">
+                {% for account in accounts %}
+                <a href="{{ url_for('loan.apply_for_loan', account_id=account.id) }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ account.account_number }}</h5>
+                        <small>Balance: {{ account.format_balance() }}</small>
+                    </div>
+                    <p class="mb-1">{{ account.account_type.name }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add current date to template context
+    var now = new Date();
+</script>
+{% endblock %}

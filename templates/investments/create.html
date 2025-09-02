@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Investment{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-chart-line"></i> Create Investment</h1>
+            <p class="lead">Invest your time for future returns</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('investment.investments') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Investments
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>Account Number:</th>
+                                <td>{{ account.account_number }}</td>
+                            </tr>
+                            <tr>
+                                <th>Account Type:</th>
+                                <td>{{ account.account_type.name }}</td>
+                            </tr>
+                            <tr>
+                                <th>Current Balance:</th>
+                                <td>{{ account.format_balance() }}</td>
+                            </tr>
+                            <tr>
+                                <th>Interest Rate:</th>
+                                <td>{{ "%.2f"|format(account.account_type.interest_rate * 150) }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Investment Form</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('investment.submit_investment', account_id=account.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.amount.label(class="form-label") }}
+                            {{ form.amount(class="form-control", type="number", step="0.1", min="0.1") }}
+                            {% if form.amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.amount.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="text-muted">How many hours do you want to invest?</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.term_days.label(class="form-label") }}
+                            {{ form.term_days(class="form-control", type="number", min="1", max="365") }}
+                            {% if form.term_days.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.term_days.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="text-muted">For how many days do you want to invest? <strong>Longer terms yield higher returns!</strong></small>
+                            <div class="form-text mt-2">
+                                <span class="badge bg-info" id="term_bonus">+0% bonus</span> 
+                                Longer terms receive a bonus of +2% per month (30 days)
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Expected Return</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="expected_return" readonly>
+                                <span class="input-group-text">hours</span>
+                            </div>
+                            <small class="text-muted">This is an estimate based on the current interest rate.</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-success btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Calculate expected return when amount or term changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const amountInput = document.getElementById('amount');
+        const termInput = document.getElementById('term_days');
+        const returnOutput = document.getElementById('expected_return');
+        const termBonusDisplay = document.getElementById('term_bonus');
+        const interestRate = {{ account.account_type.interest_rate * 1.5 }};
+        
+        function calculateReturn() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const term = parseInt(termInput.value) || 0;
+            
+            // Base interest calculation
+            const baseReturn = amount * (1 + interestRate);
+            
+            // Term multiplier: longer terms get better returns
+            // For each month (30 days), add 2% to the return
+            const termMultiplier = 1.0 + (term / 30) * 0.02;
+            const termBonusPercent = ((termMultiplier - 1) * 100).toFixed(2);
+            
+            // Calculate final return with both factors
+            const finalReturn = baseReturn * termMultiplier;
+            
+            // Update the UI
+            returnOutput.value = finalReturn.toFixed(2);
+            termBonusDisplay.textContent = `+${termBonusPercent}% bonus`;
+            
+            // Change the color of the term bonus badge based on the bonus amount
+            if (termBonusPercent > 10) {
+                termBonusDisplay.className = 'badge bg-success';
+            } else if (termBonusPercent > 5) {
+                termBonusDisplay.className = 'badge bg-primary';
+            } else if (termBonusPercent > 2) {
+                termBonusDisplay.className = 'badge bg-info';
+            } else {
+                termBonusDisplay.className = 'badge bg-secondary';
+            }
+        }
+        
+        amountInput.addEventListener('input', calculateReturn);
+        termInput.addEventListener('input', calculateReturn);
+        
+        // Initial calculation
+        calculateReturn();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}Investment Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-chart-line"></i> Investment Details</h1>
+            <p class="lead">View details of your time investment</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('investment.investments') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Investments
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Investment Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Investment ID:</strong> {{ investment.id }}</p>
+                    <p><strong>Account:</strong> {{ account.account_number }}</p>
+                    <p><strong>Amount:</strong> {{ investment.format_amount() }}</p>
+                    <p><strong>Interest Rate:</strong> {{ "%.2f"|format(investment.interest_rate * 100) }}%</p>
+                    <p><strong>Term:</strong> {{ investment.term_days }} days</p>
+                    <p><strong>Created:</strong> {{ investment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p><strong>Maturity Date:</strong> {{ investment.maturity_date.strftime('%Y-%m-%d') }}</p>
+                    <p>
+                        <strong>Status:</strong>
+                        {% if investment.status == 'ACTIVE' %}
+                        <span class="badge bg-primary">Active</span>
+                        {% elif investment.status == 'MATURED' %}
+                        <span class="badge bg-success">Matured</span>
+                        {% elif investment.status == 'WITHDRAWN' %}
+                        <span class="badge bg-secondary">Withdrawn</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Expected Return</h5>
+                </div>
+                <div class="card-body">
+                    {% if return_result.success %}
+                    <div class="alert alert-success">
+                        <h4 class="alert-heading">{{ return_result.message }}</h4>
+                        <p>When your investment matures, you will receive this amount back in your account.</p>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Return Calculation Breakdown</h5>
+                        </div>
+                        <div class="card-body">
+                            {% set base_return = investment.amount * (1 + investment.interest_rate) %}
+                            {% set term_multiplier = 1.0 + (investment.term_days / 30) * 0.02 %}
+                            {% set final_return = return_result.return_amount %}
+                            {% set interest_amount = final_return - investment.amount %}
+                            
+                            <p><strong>Principal Amount:</strong> {{ investment.format_amount() }}</p>
+                            <p><strong>Base Interest Rate:</strong> {{ "%.2f"|format(investment.interest_rate * 100) }}%</p>
+                            <p><strong>Term Bonus:</strong> {{ "%.2f"|format((term_multiplier - 1) * 100) }}% ({{ "%.2f"|format((investment.term_days / 30) * 2) }}% for {{ investment.term_days }} days)</p>
+                            <p><strong>Interest Earned:</strong> 
+                                {% set days, remainder = divmod(interest_amount, 86400) %}
+                                {% set hours, remainder = divmod(remainder, 3600) %}
+                                {% set minutes, seconds = divmod(remainder, 60) %}
+                                
+                                {% set result = [] %}
+                                {% if days > 0 %}
+                                    {% set _ = result.append(days|string + " day" + ("s" if days != 1 else "")) %}
+                                {% endif %}
+                                {% if hours > 0 %}
+                                    {% set _ = result.append(hours|string + " hour" + ("s" if hours != 1 else "")) %}
+                                {% endif %}
+                                {% if minutes > 0 %}
+                                    {% set _ = result.append(minutes|string + " minute" + ("s" if minutes != 1 else "")) %}
+                                {% endif %}
+                                {% if seconds > 0 or not result %}
+                                    {% set _ = result.append(seconds|string + " second" + ("s" if seconds != 1 else "")) %}
+                                {% endif %}
+                                
+                                {{ result|join(", ") }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3">
+                        {% set progress = ((now - investment.created_at).total_seconds() / ((investment.maturity_date - investment.created_at).total_seconds())) * 100 %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress }}%;" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ progress | round(1) }}%
+                        </div>
+                    </div>
+                    
+                    <p class="text-center">
+                        {% set days_left = (investment.maturity_date - now).days %}
+                        {% if days_left <= 0 %}
+                        <span class="badge bg-success">Matured</span>
+                        {% else %}
+                        <strong>{{ days_left }} day{% if days_left != 1 %}s{% endif %} left until maturity</strong>
+                        {% endif %}
+                    </p>
+                    
+                    {% if investment.status == 'ACTIVE' or investment.status == 'MATURED' %}
+                    <form method="POST" action="{{ url_for('investment.withdraw_investment', investment_id=investment.id) }}">
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-money-bill-wave"></i> Withdraw Investment
+                        </button>
+                        {% if days_left > 0 and investment.status == 'ACTIVE' %}
+                        <small class="text-muted">Note: Early withdrawal will not earn any interest.</small>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">Error</h4>
+                        <p>{{ return_result.message }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Add current date to template context
+    var now = new Date();
+</script>
+{% endblock %}

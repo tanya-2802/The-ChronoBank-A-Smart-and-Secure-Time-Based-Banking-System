@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for Loan{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-hand-holding-usd"></i> Apply for a Loan</h1>
+            <p class="lead">Borrow time for account {{ account.account_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('loan.loans') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Loans
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Account Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Account Number:</th>
+                            <td>{{ account.account_number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Account Type:</th>
+                            <td>{{ account.account_type.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Current Balance:</th>
+                            <td>{{ account.format_balance() }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if account.status == 'ACTIVE' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif account.status == 'FROZEN' %}
+                                <span class="badge bg-danger">Frozen</span>
+                                {% elif account.status == 'CLOSED' %}
+                                <span class="badge bg-secondary">Closed</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ account.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Loan Application</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('loan.submit_loan_application', account_id=account.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Loan Amount (hours)</label>
+                            {{ form.amount(class="form-control", placeholder="Enter amount in hours") }}
+                            {% if form.amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.amount.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                How much time do you want to borrow? (1-1000 hours)
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="term_days" class="form-label">Loan Term (days)</label>
+                            {{ form.term_days(class="form-control", placeholder="Enter term in days") }}
+                            {% if form.term_days.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.term_days.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                How long do you need to repay the loan? (7-365 days)
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="repayment_strategy" class="form-label">Repayment Strategy</label>
+                            {{ form.repayment_strategy(class="form-select") }}
+                            {% if form.repayment_strategy.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.repayment_strategy.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <ul>
+                                    <li><strong>Fixed Rate:</strong> Equal payments over the term</li>
+                                    <li><strong>Dynamic Rate:</strong> Interest rate adjusts with market conditions</li>
+                                    <li><strong>Early Repayment:</strong> Get discounts for paying early</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check-circle"></i> Apply for Loan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

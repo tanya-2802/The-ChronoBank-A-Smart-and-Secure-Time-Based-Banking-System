@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Loan Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="fas fa-hand-holding-usd"></i> Loan Details
+                {% if loan.status == 'ACTIVE' %}
+                <span class="badge bg-success">Active</span>
+                {% elif loan.status == 'PAID' %}
+                <span class="badge bg-primary">Paid</span>
+                {% elif loan.status == 'DEFAULTED' %}
+                <span class="badge bg-danger">Defaulted</span>
+                {% else %}
+                <span class="badge bg-secondary">{{ loan.status }}</span>
+                {% endif %}
+            </h1>
+            <p class="lead">Loan #{{ loan.id }} for account {{ account.account_number }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('loan.loans') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Loans
+            </a>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Loan Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tr>
+                            <th>Amount:</th>
+                            <td>{{ loan.format_amount() }}</td>
+                        </tr>
+                        <tr>
+                            <th>Interest Rate:</th>
+                            <td>{{ "%.2f"|format(loan.interest_rate * 100) }}%</td>
+                        </tr>
+                        <tr>
+                            <th>Term:</th>
+                            <td>{{ loan.term_days }} days</td>
+                        </tr>
+                        <tr>
+                            <th>Repayment Strategy:</th>
+                            <td>
+                                {% if loan.repayment_strategy == 'FIXED' %}
+                                Fixed Rate
+                                {% elif loan.repayment_strategy == 'DYNAMIC' %}
+                                Dynamic Rate
+                                {% elif loan.repayment_strategy == 'EARLY' %}
+                                Early Repayment
+                                {% else %}
+                                {{ loan.repayment_strategy }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Created:</th>
+                            <td>{{ loan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Due Date:</th>
+                            <td>{{ loan.due_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Remaining Amount:</th>
+                            <td>{{ loan.format_remaining() }}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>
+                                {% if loan.status == 'ACTIVE' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif loan.status == 'PAID' %}
+                                <span class="badge bg-primary">Paid</span>
+                                {% elif loan.status == 'DEFAULTED' %}
+                                <span class="badge bg-danger">Defaulted</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Payment Schedule</h5>
+                </div>
+                <div class="card-body">
+                    {% if schedule %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in schedule %}
+                                <tr>
+                                    <td>{{ payment.date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ payment.amount|format_time }}</td>
+                                    <td>{{ payment.note if payment.note else '' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No payment schedule available.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if loan.status == 'ACTIVE' %}
+    <div class="row mt-4" id="payment">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Make a Payment</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('loan.make_payment', loan_id=loan.id) }}">
+                        {{ payment_form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">Payment Amount (hours)</label>
+                            {{ payment_form.amount(class="form-control", placeholder="Enter amount in hours") }}
+                            {% if payment_form.amount.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in payment_form.amount.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Your current account balance: {{ account.format_balance() }}
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-money-bill-wave"></i> Make Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

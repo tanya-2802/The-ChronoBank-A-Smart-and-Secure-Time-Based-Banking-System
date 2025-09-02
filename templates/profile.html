@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-user-circle"></i> My Profile</h1>
+        <p class="lead">Manage your personal information</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+            <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-key"></i> Change Password
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Username:</strong> {{ current_user.username }}</p>
+                <p><strong>Full Name:</strong> {{ current_user.get_full_name() }}</p>
+                <p><strong>Email:</strong> {{ current_user.email }}</p>
+                <p><strong>Member Since:</strong> {{ current_user.created_at.strftime('%Y-%m-%d') }}</p>
+                <p>
+                    <strong>Reputation Score:</strong>
+                    <span class="badge bg-primary">{{ current_user.reputation_score }}</span>
+                </p>
+                <p>
+                    <strong>Status:</strong>
+                    {% if current_user.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Account Security</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Last Password Change:</strong> {{ current_user.updated_at.strftime('%Y-%m-%d') }}</p>
+                <p><strong>Last Login:</strong> Today</p>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-lightbulb"></i> Security Tips</h6>
+                    <ul class="mb-0">
+                        <li>Change your password regularly</li>
+                        <li>Use a strong, unique password</li>
+                        <li>Never share your account details with others</li>
+                        <li>Be cautious of suspicious transactions</li>
+                    </ul>
+                </div>
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Loans{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col">
+            <h1 class="display-5"><i class="fas fa-hand-holding-usd"></i> Loans</h1>
+            <p class="lead">Manage your time loans</p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('loan.loans') }}" class="btn btn-outline-primary active">All Loans</a>
+                <a href="{{ url_for('loan.active_loans') }}" class="btn btn-outline-primary">Active Loans</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            {% if loans %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Account</th>
+                            <th>Amount</th>
+                            <th>Interest Rate</th>
+                            <th>Remaining</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for loan in loans %}
+                        <tr>
+                            <td>{{ loan.account.account_number }}</td>
+                            <td>{{ loan.format_amount() }}</td>
+                            <td>{{ "%.2f"|format(loan.interest_rate * 100) }}%</td>
+                            <td>{{ loan.format_remaining() }}</td>
+                            <td>{{ loan.due_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if loan.status == 'ACTIVE' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif loan.status == 'PAID' %}
+                                <span class="badge bg-primary">Paid</span>
+                                {% elif loan.status == 'DEFAULTED' %}
+                                <span class="badge bg-danger">Defaulted</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ loan.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('loan.loan_details', loan_id=loan.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-info-circle"></i> Details
+                                </a>
+                                {% if loan.status == 'ACTIVE' %}
+                                <a href="{{ url_for('loan.loan_details', loan_id=loan.id) }}#payment" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-money-bill-wave"></i> Pay
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> You don't have any loans yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col">
+            <h2>Apply for a Loan</h2>
+            <p>Select an account to apply for a loan:</p>
+            
+            <div class="list-group">
+                {% for account in accounts %}
+                <a href="{{ url_for('loan.apply_for_loan', account_id=account.id) }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ account.account_number }}</h5>
+                        <small>Balance: {{ account.format_balance() }}</small>
+                    </div>
+                    <p class="mb-1">{{ account.account_type.name }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

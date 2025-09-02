@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}My Accounts{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-university"></i> My Accounts</h1>
+        <p class="lead">Manage your time accounts</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <a href="{{ url_for('account.create_account') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> New Account
+            </a>
+            <a href="{{ url_for('account.create_custom_account') }}" class="btn btn-outline-primary">
+                <i class="fas fa-cog"></i> Custom Account
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% if accounts %}
+        {% for account in accounts %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ account.account_type.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">{{ account.account_number }}</h6>
+                    <div class="mb-3">
+                        <span class="fs-4 fw-bold text-primary">{{ account.format_balance() }}</span>
+                        {% if account.balance < 1800 %}
+                        <div class="mt-2">
+                            <span class="badge bg-danger">Low Balance (< 30 minutes)</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <p class="card-text">
+                        <strong>Status:</strong>
+                        {% if account.status == 'ACTIVE' %}
+                        <span class="badge bg-success">Active</span>
+                        {% elif account.status == 'OVERDRAWN' %}
+                        <span class="badge bg-warning">Overdrawn</span>
+                        {% elif account.status == 'FROZEN' %}
+                        <span class="badge bg-danger">Frozen</span>
+                        {% endif %}
+                    </p>
+                    <p class="card-text">
+                        <strong>Created:</strong> {{ account.created_at.strftime('%Y-%m-%d') }}
+                    </p>
+                    <p class="card-text">
+                        <strong>Interest Rate:</strong> {{ account.account_type.interest_rate * 100 }}%
+                    </p>
+                    <p class="card-text">
+                        <strong>Transaction Limit:</strong> {{ account.account_type.transaction_limit // 3600 }} hours
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('account.view_account', account_id=account.id) }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="{{ url_for('account.deposit', account_id=account.id) }}" class="btn btn-success">
+                            <i class="fas fa-plus"></i> Deposit
+                        </a>
+                        <a href="{{ url_for('account.withdraw', account_id=account.id) }}" class="btn btn-warning">
+                            <i class="fas fa-minus"></i> Withdraw
+                        </a>
+                        <a href="{{ url_for('account.transfer', account_id=account.id) }}" class="btn btn-info">
+                            <i class="fas fa-exchange-alt"></i> Transfer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col">
+        <div class="alert alert-info">
+            <p class="mb-0">You don't have any accounts yet. <a href="{{ url_for('account.create_account') }}">Create your first account</a>.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Available Account Types</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Minimum Balance</th>
+                                <th>Interest Rate</th>
+                                <th>Transaction Limit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account_type in account_types %}
+                            <tr>
+                                <td>{{ account_type.name }}</td>
+                                <td>{{ account_type.description }}</td>
+                                <td>{{ account_type.min_balance // 3600 }} hours</td>
+                                <td>{{ account_type.interest_rate * 100 }}%</td>
+                                <td>{{ account_type.transaction_limit // 3600 }} hours</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

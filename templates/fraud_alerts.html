@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Fraud Alerts{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5"><i class="fas fa-shield-alt"></i> Fraud Alerts</h1>
+        <p class="lead">Review and manage potential fraudulent activities on your accounts</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        {% if alerts %}
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Fraud Alerts</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Account</th>
+                                <th>Risk Score</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ alert.account.account_number }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ alert.risk_score * 100 }}%;" aria-valuenow="{{ alert.risk_score * 100 }}" aria-valuemin="0" aria-valuemax="100">
+                                            {{ (alert.risk_score * 100) | round(1) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ alert.description }}</td>
+                                <td>
+                                    {% if alert.status == 'OPEN' %}
+                                    <span class="badge bg-warning">Open</span>
+                                    {% elif alert.status == 'RESOLVED' %}
+                                    <span class="badge bg-danger">Fraud Confirmed</span>
+                                    {% elif alert.status == 'FALSE_POSITIVE' %}
+                                    <span class="badge bg-success">False Positive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('fraud.view_alert', alert_id=alert.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% if alert.status == 'OPEN' %}
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#resolveModal{{ alert.id }}">
+                                        <i class="fas fa-exclamation-circle"></i> Report Fraud
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#falsePositiveModal{{ alert.id }}">
+                                        <i class="fas fa-check-circle"></i> Not Fraud
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            
+                            <!-- Resolve Modal -->
+                            <div class="modal fade" id="resolveModal{{ alert.id }}" tabindex="-1" aria-labelledby="resolveModalLabel{{ alert.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="resolveModalLabel{{ alert.id }}">Confirm Fraud Report</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to report this as fraud? Your account will be frozen for security purposes.</p>
+                                            <p><strong>Account:</strong> {{ alert.account.account_number }}</p>
+                                            <p><strong>Description:</strong> {{ alert.description }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="POST" action="{{ url_for('fraud.resolve_alert', alert_id=alert.id) }}">
+                                                <input type="hidden" name="is_fraud" value="true">
+                                                <button type="submit" class="btn btn-danger">Confirm Fraud</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- False Positive Modal -->
+                            <div class="modal fade" id="falsePositiveModal{{ alert.id }}" tabindex="-1" aria-labelledby="falsePositiveModalLabel{{ alert.id }}" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="falsePositiveModalLabel{{ alert.id }}">Confirm False Positive</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure this alert is a false positive? This will mark the alert as resolved.</p>
+                                            <p><strong>Account:</strong> {{ alert.account.account_number }}</p>
+                                            <p><strong>Description:</strong> {{ alert.description }}</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="POST" action="{{ url_for('fraud.resolve_alert', alert_id=alert.id) }}">
+                                                <input type="hidden" name="is_fraud" value="false">
+                                                <button type="submit" class="btn btn-success">Confirm False Positive</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> You have no fraud alerts at this time.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> About Fraud Detection</h5>
+            </div>
+            <div class="card-body">
+                <p>Our fraud detection system monitors your accounts for suspicious activities, including:</p>
+                <ul>
+                    <li>Unusually large transactions</li>
+                    <li>Rapid depletion of your balance</li>
+                    <li>Unusual transaction patterns</li>
+                    <li>Multiple transactions in a short period</li>
+                </ul>
+                <p>If you receive a fraud alert, please review it carefully and take appropriate action:</p>
+                <ul>
+                    <li><strong>Report as Fraud:</strong> If you don't recognize the activity, report it as fraud. Your account will be frozen to prevent further unauthorized transactions.</li>
+                    <li><strong>Mark as False Positive:</strong> If you recognize the activity as legitimate, mark it as a false positive.</li>
+                </ul>
+                <p>For assistance, please contact our customer support team.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
